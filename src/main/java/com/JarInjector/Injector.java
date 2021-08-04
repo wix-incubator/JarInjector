@@ -134,8 +134,11 @@ public class Injector {
             int index = javaFileName.lastIndexOf(".");
             String classFileName = javaFileName.substring(0, index) + ".class";
             jarModifier.putEntry(entryName, Files.readAllBytes(Paths.get(classFileName)));
+            Files.delete(Paths.get(classFileName));
         }
 
         jarModifier.build(outJarFile);
+
+        Files.delete(Paths.get(intermediateJarFile));
     }
 }
