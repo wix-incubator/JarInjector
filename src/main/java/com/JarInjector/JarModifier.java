@@ -1,4 +1,4 @@
-package com.evgenis.injector;
+package com.JarInjector;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package com.evgenis.injector;
+package com.JarInjector;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
