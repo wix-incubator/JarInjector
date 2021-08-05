@@ -16,6 +16,7 @@ public class Injector {
 
     private final String originalJarFile;
     private final String[] javaFiles;
+    private final String[] jarsToCompileWith;
     private String intermediateJarFile;
     private String outJarFile;
     private final List<String> entriesToReplace = new ArrayList<>();
@@ -31,9 +32,10 @@ public class Injector {
         }
     }
 
-    public Injector(String jarFile, String[] javaFiles) {
+    public Injector(String jarFile, String[] javaFiles, String[] jarsToCompileWith) {
         this.originalJarFile = jarFile;
         this.javaFiles = javaFiles;
+        this.jarsToCompileWith = jarsToCompileWith;
         initJarNames();
     }
 
@@ -114,10 +116,18 @@ public class Injector {
     }
 
     private void compileJavaFiles() throws IOException, InterruptedException {
+        String jars = "";
+        if (jarsToCompileWith != null && jarsToCompileWith.length > 0) {
+            jars = String.join(";", jarsToCompileWith);
+        }
+        if (jars.length() > 0) {
+            jars = ";" + jars;
+        }
+        jars = intermediateJarFile + jars;
         List<String> command = new ArrayList<>();
         command.add("javac");
         command.add("-classpath");
-        command.add(intermediateJarFile);
+        command.add(jars);
         command.addAll(Arrays.asList(javaFiles));
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(true);

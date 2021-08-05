@@ -19,7 +19,10 @@ public class Main {
         }
 
         if (injectorOptions != null) {
-            Injector injector = new Injector(injectorOptions.jarFile, injectorOptions.javaSources);
+            Injector injector = new Injector(
+                    injectorOptions.jarFile,
+                    injectorOptions.javaSources,
+                    injectorOptions.jarsToCompileWith);
             try {
                 injector.inject();
             } catch (IOException | InterruptedException e) {
