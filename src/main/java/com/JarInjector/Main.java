@@ -1,22 +1,65 @@
 package com.JarInjector;
 
+import org.apache.commons.cli.*;
+
 import java.io.IOException;
 
 public class Main {
+    private static class InjectorOptions {
+        String jarFile;
+        String[] javaSources;
+        String[] jarsToCompileWith;
+    }
+
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Usage: JarInjector jarFile javaFile1 [JavaFile2 ...]");
-            return;
+        InjectorOptions injectorOptions = null;
+        try {
+            injectorOptions = parseArgs(args);
+        } catch (ParseException ignored) {
         }
 
-        String jarFile = args[0];
-        String[] javaSources = new String[args.length - 1];
-        System.arraycopy(args, 1, javaSources, 0, args.length - 1);
-        Injector injector = new Injector(jarFile, javaSources);
+        if (injectorOptions != null) {
+            Injector injector = new Injector(injectorOptions.jarFile, injectorOptions.javaSources);
+            try {
+                injector.inject();
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static InjectorOptions parseArgs(String[] args) throws ParseException {
+        InjectorOptions injectorOptions = new InjectorOptions();
+        Options options = new Options();
+        options.addOption(Option.builder("jar")
+                .hasArg()
+                .required()
+                .desc("Jar file to be modified")
+                .build());
+
+        options.addOption(Option.builder("src")
+                .hasArgs()
+                .required()
+                .desc("Java source files to inject into jar")
+                .build());
+
+        options.addOption(Option.builder("cw")
+                .hasArgs()
+                .required(false)
+                .desc("Additional jars to compile with")
+                .build());
+
+        CommandLineParser parser = new DefaultParser();
         try {
-            injector.inject();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            CommandLine line = parser.parse(options, args);
+            injectorOptions.jarFile = line.getOptionValue("jar");
+            injectorOptions.javaSources = line.getOptionValues("src");
+            injectorOptions.jarsToCompileWith = line.getOptionValues("cw");
+            return injectorOptions;
+        } catch (ParseException e) {
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("JarInjector", options);
+            throw e;
         }
     }
 }
