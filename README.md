@@ -1,8 +1,8 @@
-#JarInjector
+# JarInjector
 
 JarInjector is a simple-to-use tool providing a way to modify a binary class files in the any existing jar file.
 
-##What is the tool for
+## What is the tool for
 If you need to modify an existing jar without full recompiling, JarInjector can help you. Say, we have a huge library
 like React Native, and want to change the behaviour of some specific RN class. Basically,
 we could rebuild the total lib from its source, but it is a complicated
@@ -18,7 +18,7 @@ we should do it after every lib update.
 The **JarInjector** gives you a possibility to define
 only the difference you need, and inject it.
 
-##How does it work
+## How does it work
 Let's look at a little example.
 There is an *example.jar* containing a lot of classes,
 one of them named *ClassA* in package *com.example.logic*.
@@ -66,7 +66,7 @@ java -jar JarInjector.jar -jar ./example.jar -src ./ClassA.java
 ```
 and the *example-new.jar* will be created.
 
-##Usage
+## Usage
 
 ```
 java -jar JarInjector.jar -jar JarFileToModify -src ListOfJavaClassesToInject -cw AdditionalJarsToCompileWith
