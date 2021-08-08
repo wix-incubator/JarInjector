@@ -1,17 +1,17 @@
 # JarInjector
 
-JarInjector is a simple-to-use tool providing a way to modify a binary class files in the any existing jar file.
+JarInjector is a simple-to-use tool providing a way to modify binary class files in any existing jar file.
 
 ## What is the tool for
 If you need to modify an existing jar without full recompiling, JarInjector can help you. Say, we have a huge library
-like React Native, and want to change the behaviour of some specific RN class. Basically,
+like React Native and want to change the behavior of some specific RN class. Basically,
 we could rebuild the total lib from its source, but it is a complicated
-and time-loading task. You should also to take into account the maintenance price: you must 
-fork the lib project, to merge your changes, and sync it constantly
+and time-loading task. You should also take into account the maintenance price: you must 
+fork the lib project, merge your changes, and sync it constantly
 with lib updates.
 
-The better way is to modify the class / classes you need to,
-and replace them in the lib jar. And again we could just get the original
+The better way is to modify the class/classes you need to
+and replace them in the lib jar. And again we could just get the
 source code of that class, modify it somehow, compile and replace it, but 
 we should do it after every lib update.
 
@@ -38,7 +38,7 @@ final class ClassA {
 }
 ```
 
-We want to change a behaviour of *doSomething* method, 
+We want to change behavior of the *doSomething* method, 
 say modify val1 value before the original method's code run.
 
 For that purpose, we'll create a new ClassA.java file:
