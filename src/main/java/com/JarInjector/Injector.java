@@ -121,7 +121,7 @@ public class Injector {
             jars = String.join(";", jarsToCompileWith);
         }
         if (jars.length() > 0) {
-            jars = ";" + jars;
+            jars = ":" + jars;
         }
         jars = intermediateJarFile + jars;
         List<String> command = new ArrayList<>();
