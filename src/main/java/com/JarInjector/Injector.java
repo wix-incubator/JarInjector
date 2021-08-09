@@ -1,24 +1,18 @@
 package com.JarInjector;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class Injector {
     private static final String BASE_CLASS_PREFIX = "Base__";
     private static final String FULL_NAME_DELIMITER = "/";
-    private static final String INTERMEDIATE_JAR_FILE_NAME_SUFFIX = "-tmp";
-    private static final String OUT_JAR_FILE_NAME_SUFFIX = "-new";
 
-    private final String originalJarFile;
     private final String[] javaFiles;
     private final String[] jarsToCompileWith;
-    private String intermediateJarFile;
-    private String outJarFile;
+    private final String unpackedJarFile;
     private final List<String> entriesToReplace = new ArrayList<>();
     private final Map<String, String> entryNamePerJavaClass = new HashMap<>();
 
@@ -33,19 +27,9 @@ public class Injector {
     }
 
     public Injector(String jarFile, String[] javaFiles, String[] jarsToCompileWith) {
-        this.originalJarFile = jarFile;
+        this.unpackedJarFile = jarFile;
         this.javaFiles = javaFiles;
         this.jarsToCompileWith = jarsToCompileWith;
-        initJarNames();
-    }
-
-    private void initJarNames() {
-        File file = new File(originalJarFile);
-        String path = file.getParent();
-        String nameWithExtension = file.getName();
-        String nameWithoutExtension = nameWithExtension.substring(0, nameWithExtension.length() - ".jar".length());
-        intermediateJarFile = Paths.get(path, nameWithoutExtension + INTERMEDIATE_JAR_FILE_NAME_SUFFIX + ".jar").toString();
-        outJarFile = Paths.get(path, nameWithoutExtension + OUT_JAR_FILE_NAME_SUFFIX + ".jar").toString();
     }
 
     public void inject() throws IOException, InterruptedException {
@@ -89,21 +73,28 @@ public class Injector {
     }
 
     private void replaceEntries() throws IOException {
-        JarModifier jarModifier = new JarModifier(originalJarFile);
+        UnpackedJarModifier jarModifier = new UnpackedJarModifier(unpackedJarFile);
 
         for (String entry : entriesToReplace) {
-            byte[] bytes = jarModifier.readEntry(entry);
-            EntryName entryName = buildBase__Name(entry);
-
-            ClassModifier classModifier = new ClassModifier(bytes);
-            classModifier.renameClass(entryName.shortName);
-
-            jarModifier
-                    .deleteEntry(entry)
-                    .putEntry(entryName.fullName, classModifier.getBytes());
+            replaceEntry(jarModifier, entry);
+            // -------------- handle ...$... classes
+            String entryPath = entry.substring(0, entry.lastIndexOf('/'));
+            String startsWith = entry.substring(entryPath.length() + 1);
+            startsWith = startsWith.substring(0, startsWith.length() - ".class".length()) + "$";
+            String[] internalEntries = jarModifier.findClassEntries(entryPath, startsWith);
+            for (String internalEntry : internalEntries) {
+                replaceEntry(jarModifier, internalEntry);
+            }
         }
+    }
 
-        jarModifier.build(intermediateJarFile);
+    private void replaceEntry(UnpackedJarModifier jarModifier, String entry) throws IOException {
+        byte[] bytes = jarModifier.readEntry(entry);
+        EntryName entryName = buildBase__Name(entry);
+        ClassModifier classModifier = new ClassModifier(bytes);
+        classModifier.renameClass(entryName.shortName);
+        jarModifier.deleteEntry(entry);
+        jarModifier.putEntry(entryName.fullName, classModifier.getBytes());
     }
 
     // "com/evgenis/simpleapp/logic/Logic.class"
@@ -123,7 +114,7 @@ public class Injector {
         if (jars.length() > 0) {
             jars = ":" + jars;
         }
-        jars = intermediateJarFile + jars;
+        jars = unpackedJarFile + jars;
         List<String> command = new ArrayList<>();
         command.add("javac");
         command.add("-classpath");
@@ -136,19 +127,34 @@ public class Injector {
     }
 
     private void putCompiledClassesIntoJar() throws IOException {
-        JarModifier jarModifier = new JarModifier(intermediateJarFile);
+        UnpackedJarModifier jarModifier = new UnpackedJarModifier(unpackedJarFile);
 
         for (Map.Entry<String, String> mapEntry : entryNamePerJavaClass.entrySet()) {
             String entryName = mapEntry.getValue();
             String javaFileName = mapEntry.getKey();
             int index = javaFileName.lastIndexOf(".");
+
             String classFileName = javaFileName.substring(0, index) + ".class";
-            jarModifier.putEntry(entryName, Files.readAllBytes(Paths.get(classFileName)));
+            Path classPath = Paths.get(classFileName);
+            jarModifier.putEntry(entryName, Files.readAllBytes(classPath));
             Files.delete(Paths.get(classFileName));
+
+            // ---------- put ...$... class files into jar
+            String entryPath = entryName.substring(0, entryName.lastIndexOf('/'));
+            Path parent = classPath.getParent();
+            String fileName = classPath.getFileName().toString();
+            index = fileName.lastIndexOf(".");
+            String fileNameWithoutExt = fileName.substring(0, index);
+            File[] files = findClassFiles(parent.toFile(), fileNameWithoutExt + "$");
+            for (File file : files) {
+                jarModifier.putEntry(entryPath + "/" + file.getName(), Files.readAllBytes(file.toPath()));
+                Files.delete(file.toPath());
+            }
         }
-
-        jarModifier.build(outJarFile);
-
-        Files.delete(Paths.get(intermediateJarFile));
     }
+
+    private File[] findClassFiles(File dir, String startsWith) {
+        return dir.listFiles((dir1, name) -> name.startsWith(startsWith) && name.endsWith(".class"));
+    }
+
 }

@@ -10,7 +10,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 
-public class JarModifier {
+public class JarModifier_UtilJar {
     private static class Entry {
         Entry(String name, byte[] bytes) {
             this.name = name;
@@ -21,11 +21,11 @@ public class JarModifier {
         byte[] bytes;
     }
 
-    private final JarFile jarFile;
+    private JarFile jarFile;
     private final List<String> entriesToDelete = new ArrayList<>();
     private final List<Entry> entriesToPut = new ArrayList<>();
 
-    public JarModifier(String path) throws IOException {
+    public JarModifier_UtilJar(String path) throws IOException {
         jarFile = new JarFile(path);
     }
 
@@ -38,12 +38,12 @@ public class JarModifier {
         return bytes;
     }
 
-    public JarModifier deleteEntry(String name) {
+    public JarModifier_UtilJar deleteEntry(String name) {
         entriesToDelete.add(name);
         return this;
     }
 
-    public JarModifier putEntry(String name, byte[] bytes) {
+    public JarModifier_UtilJar putEntry(String name, byte[] bytes) {
         entriesToDelete.add(name);
         entriesToPut.add(new Entry(name, bytes));
         return this;
